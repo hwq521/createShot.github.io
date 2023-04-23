@@ -289,3 +289,7 @@
     object-position: center;
     margin-top: 20px;
 }
+
+.custom-loading {
+    z-index: 2005 !important;
+}
