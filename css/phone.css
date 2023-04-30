@@ -38,6 +38,8 @@
     --commentInputBgColor: #f3f3f3;
     --commentInputIconColor: #333;
     --commentInputColor: inherit;
+    --searchLabelColor: #595b5f;
+    --searchValueColor: #124b94;
 }
 
 .dark-theme {
@@ -50,6 +52,8 @@
     --commentInputBgColor: #0e0e0e;
     --commentInputIconColor: #828282;
     --commentInputColor: #858585;
+    --searchLabelColor: #c8c8c8;
+    --searchValueColor: #e2c26d;
 }
 
 .comment-drawer .el-drawer {
@@ -108,18 +112,18 @@
 .search-word-con {
     font-size: 15px;
     padding: 16px 12px;
-    color: #c8c8c8;
+    color: var(--searchLabelColor);
 }
 
 .search-word {
     display: inline-block;
-    padding-left: 10px;
+    /* padding-left: 10px; */
 }
 
 .search-word,
 .search-word-icon path {
-    color: #e2c26d;
-    fill: #e2c26d;
+    color: var(--searchValueColor);
+    fill: var(--searchValueColor);
 }
 
 .search-word-icon {
@@ -127,6 +131,7 @@
     height: 10px;
     vertical-align: text-top;
     margin-top: 1.5px;
+    /* margin-left: -5px; */
 }
 
 .comment-header .comment-popup__close {
