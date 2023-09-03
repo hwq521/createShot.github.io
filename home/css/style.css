@@ -1,0 +1,100 @@
+* {
+    font-family: PingFang SC, DFPKingGothicGB-Regular, sans-serif;
+}
+
+html,
+body {
+    background-color: #fbfbfb;
+    line-height: 1.5;
+    scroll-behavior: smooth;
+}
+
+#app.hide {
+    opacity: 0;
+    overflow: hidden;
+}
+
+.el-select .el-input {
+    width: 100px;
+}
+
+.input-with-select .el-input-group__append {
+    background-color: #fff;
+}
+
+/* 谷歌 */
+
+input::-webkit-outer-spin-button,
+input::-webkit-inner-spin-button {
+    -webkit-appearance: none;
+}
+
+/* 火狐 */
+
+input[type="number"] {
+    -moz-appearance: textfield;
+}
+
+.el-card+.el-card {
+    margin-top: 20px;
+}
+
+.add-comment-form-item {
+    text-align: right;
+    margin-top: 20px;
+}
+
+.el-date-editor {
+    width: 100% !important;
+}
+
+.upload-disabled .el-upload {
+    display: none;
+}
+
+.text-btn-del {
+    color: red;
+    float: right;
+    padding: 3px 0
+}
+
+/* 头像 */
+
+ul,
+li {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+
+/* .head-img-group>li */
+
+.head-img-radio-group {
+    max-height: 45vh;
+    overflow: auto;
+}
+
+.head-img-radio-group .el-radio__input {
+    display: none;
+}
+
+.head-img-radio-group>li {
+    display: inline-block;
+}
+
+.head-img-radio-group .head-img {
+    width: 100px;
+    height: 100px;
+    object-fit: contain;
+    object-position: center;
+    border: 2px solid #f3f3f3;
+    border-radius: 2px;
+}
+
+.head-img-radio-group .el-radio__input:checked~label .head-img {
+    border-color: #409EFF !important;
+}
+
+.choose-head-img-con {
+    margin-top: 10px;
+}

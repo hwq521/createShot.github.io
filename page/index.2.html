@@ -1,0 +1,688 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>自动生成评论系统</title>
+    <!-- 引入样式 -->
+    <link rel="stylesheet" href="./lib/element-ui/index.css">
+    <link rel="stylesheet" href="./css/phone.css">
+    <link rel="stylesheet" href="./css/style.css">
+</head>
+
+<body>
+    <div id="app" class="hide">
+        <el-form ref="form" label-width="80px" :model="formData" size="small">
+            <el-card header="基础信息">
+                <el-row>
+                    <el-col v-bind="colBindAttribute">
+                        <el-form-item label="上传图片" prop="files" ref="files-item" :rules="requiredRule('上传图片')">
+                            <c-upload v-model="formData.files" list-type="picture" :accept="fileAccept" v-bind="$attrs" v-on="$listeners" @change="uploadClearVali('files-item')"
+                            />
+                        </el-form-item>
+                        <el-form-item label="地区" prop="areaCH" :rules="requiredRule('请输入地区')">
+                            <el-input v-model="formData.areaCH" placeholder="请输入地区"></el-input>
+                        </el-form-item>
+                        <el-form-item label="看过人次" prop="numberOfSeen" :rules="requiredRule('请输入人次')">
+                            <el-input type="number" v-model="formData.numberOfSeen" placeholder="请输入人次" class="input-with-select">
+                                <el-select v-model="formData.numberOfSeenUnit" slot="append" placeholder="请选择">
+                                    <el-option label="无单位" value=""></el-option>
+                                    <el-option label="万" value="万"></el-option>
+                                    <el-option label="亿" value="亿"></el-option>
+                                </el-select>
+                            </el-input>
+                        </el-form-item>
+                        <el-form-item label="总评论数" prop="commentNum" :rules="requiredRule('请输入评论数')">
+                            <el-input type="number" v-model="formData.commentNum" placeholder="请输入评论数"></el-input>
+                        </el-form-item>
+                    </el-col>
+                </el-row>
+            </el-card>
+            <el-card header="" v-for="(item, key) in formData.commentList" :key="key">
+                <div slot="header" class="clearfix">
+                    <span>一级评论</span>
+                    <el-button class="text-btn-del" type="text" v-if="formData.commentList.length > 1" @click="delComment({key:key})">删除
+                        <i class="el-icon-delete"></i>
+                    </el-button>
+                </div>
+                <el-row>
+                    <el-col v-bind="colBindAttribute">
+                        <el-form-item label="上传图片" :ref="`form-upload-${key}`" :prop="`commentList[${key}].files`" :rules="requiredRule('请上传头像')">
+                            <c-upload v-model="item.files" list-type="picture-card" :accept="fileAccept" @change="uploadClearVali(`form-upload-${key}`)"
+                            />
+                        </el-form-item>
+                        <el-form-item label="地区" :prop="`commentList[${key}].areaCH`" :rules="requiredRule('请输入地区')">
+                            <el-input v-model="item.areaCH" maxlength="3" placeholder="请输入地区"></el-input>
+                        </el-form-item>
+                        <el-form-item label="昵称" :prop="`commentList[${key}].name`" :rules="requiredRule('请输入昵称')">
+                            <el-input v-model="item.name" maxlength="20" placeholder="请输入昵称"></el-input>
+                        </el-form-item>
+                        <el-form-item label="时间" :prop="`commentList[${key}].time`" :rules="requiredRule('请输入评论时间')">
+                            <el-input v-model="item.time" placeholder="请输入评论时间"></el-input>
+                            </el-date-picker>
+                        </el-form-item>
+                        <el-form-item label="内容" :prop="`commentList[${key}].content`" :rules="requiredRule('请输入评论内容')">
+                            <el-input type="textarea" v-model="item.content" placeholder="请输入评论内容" :autosize="{ minRows: 2, maxRows: 4}"></el-input>
+                        </el-form-item>
+                        <el-form-item label="是否作者" required>
+                            <el-radio-group v-model="item.isAuthor">
+                                <el-radio :label="false">否</el-radio>
+                                <el-radio :label="true">是</el-radio>
+                            </el-radio-group>
+                        </el-form-item>
+                        <el-form-item label="是否被赞" required>
+                            <el-radio-group v-model="item.isLikes">
+                                <el-radio :label="false">否</el-radio>
+                                <el-radio :label="true">是</el-radio>
+                            </el-radio-group>
+                        </el-form-item>
+                        <el-form-item label="点赞数" :prop="`commentList[${key}].likesNum`" :rules="requiredRule('请输入点赞数')">
+                            <el-input type="number" v-model="item.likesNum" placeholder="请输入点赞数"></el-input>
+                        </el-form-item>
+                        <el-form-item label="点踩数" :prop="`commentList[${key}].noLikesNum`" :rules="requiredRule('请输入点踩数')">
+                            <el-input type="number" v-model="item.noLikesNum" placeholder="请输入点踩数"></el-input>
+                        </el-form-item>
+                    </el-col>
+                </el-row>
+                <el-row>
+                    <el-col v-bind="col2BindAttribute" :push="2">
+                        <el-card v-for="(iitem, kkey) in item.child" :key="`${key}${kkey}`">
+                            <div slot="header" class="clearfix">
+                                <span>二级评论</span>
+                                <el-button class="text-btn-del" type="text" @click="delComment({key:key, kkey:kkey})">删除
+                                    <i class="el-icon-delete"></i>
+                                </el-button>
+                            </div>
+                            <el-form-item label="头像" :ref="`form-upload-${key}${kkey}`" :prop="`commentList[${key}].child[${kkey}].files`" :rules="requiredRule('请上传头像')">
+                                <c-upload v-model="iitem.files" list-type="picture-card" :accept="fileAccept" @change="uploadClearVali(`form-upload-${key}${kkey}`)"
+                                />
+                            </el-form-item>
+                            <el-form-item label="地区" :prop="`commentList[${key}].child[${kkey}].areaCH`" :rules="requiredRule('请输入地区')">
+                                <el-input v-model="iitem.areaCH" maxlength="3" placeholder="请输入地区"></el-input>
+                            </el-form-item>
+                            <el-form-item label="昵称" :prop="`commentList[${key}].child[${kkey}].name`" :rules="requiredRule('请输入昵称')">
+                                <el-input v-model="iitem.name" maxlength="20" placeholder="请输入昵称"></el-input>
+                            </el-form-item>
+                            <el-form-item label="时间" :prop="`commentList[${key}].child[${kkey}].time`" :rules="requiredRule('请输入评论时间')">
+                                <el-input v-model="iitem.time" placeholder="请输入发布时间"></el-input>
+                                </el-date-picker>
+                            </el-form-item>
+                            <el-form-item label="内容" :prop="`commentList[${key}].child[${kkey}].content`" :rules="requiredRule('请输入评论内容')">
+                                <el-input type="textarea" v-model="iitem.content" placeholder="请输入评论内容" :autosize="{ minRows: 2, maxRows: 4}"></el-input>
+                            </el-form-item>
+                            <el-form-item label="被回昵称" v-show="!iitem.isAuthor">
+                                <el-input v-model="iitem.replyNickname" maxlength="20" placeholder="请输入被回复用户昵称"></el-input>
+                            </el-form-item>
+                            <el-form-item label="是否作者" required>
+                                <el-radio-group v-model="iitem.isAuthor">
+                                    <el-radio :label="false">否</el-radio>
+                                    <el-radio :label="true">是</el-radio>
+                                </el-radio-group>
+                            </el-form-item>
+                            <el-form-item label="是否被赞" required>
+                                <el-radio-group v-model="iitem.isLikes">
+                                    <el-radio :label="false">否</el-radio>
+                                    <el-radio :label="true">是</el-radio>
+                                </el-radio-group>
+                            </el-form-item>
+                            <el-form-item label="点赞数" :prop="`commentList[${key}].child[${kkey}].likesNum`" :rules="requiredRule('请输入点赞数')">
+                                <el-input type="number" v-model="iitem.likesNum" placeholder="请输入点赞数"></el-input>
+                            </el-form-item>
+                            <el-form-item label="点踩数" :prop="`commentList[${key}].child[${kkey}].noLikesNum`" :rules="requiredRule('请输入点踩数')">
+                                <el-input type="number" v-model="iitem.noLikesNum" placeholder="请输入点踩数"></el-input>
+                            </el-form-item>
+                        </el-card>
+                    </el-col>
+                </el-row>
+                <el-row>
+                    <el-col>
+                        <el-form-item class="add-comment-form-item">
+                            <el-button type="primary" @click="createComment({key:key})">
+                                增加二级评论
+                                <i class="el-icon-plus"></i>
+                            </el-button>
+                        </el-form-item>
+                    </el-col>
+                </el-row>
+            </el-card>
+            <el-form-item class="add-comment-form-item">
+                <el-button type="primary" @click="createComment()">增加一级评论
+                    <i class="el-icon-plus"></i>
+                </el-button>
+            </el-form-item>
+            <el-form-item>
+                <el-button type="primary" @click.prevent="onSubmit">提交</el-button>
+            </el-form-item>
+        </el-form>
+
+        <c-crateshot ref="c-crateshot" />
+    </div>
+    <script src="./js/AWE2342da.js"></script>
+    <script src="./lib/vue/vue.min.js"></script>
+    <!-- 引入组件库 -->
+    <script src="./lib/element-ui/index.js"></script>
+    <script src="./lib/html2canvas/html2canvas.min.js" async></script>
+    <script>
+        (function () {
+
+            var keyStr = 'ajseqwesz121!5'
+            var ivStr = '4566ai0qO23412312'
+
+            function decrypt(data, keyS, ivS) {
+                let key = keyS || keyStr
+                let iv = ivS || ivStr
+                key = CryptoJS.enc.Utf8.parse(key)
+                iv = CryptoJS.enc.Utf8.parse(iv)
+                return CryptoJS.DES.decrypt(data, key, {
+                    iv: iv,
+                    mode: CryptoJS.mode.CBC,
+                    padding: CryptoJS.pad.Pkcs7,
+                }).toString(CryptoJS.enc.Utf8)
+            }
+
+            function getQueryString(name) {
+                var query_string = window.location.search;
+                if (!query_string) return null; // 如果无参，返回null
+                var re = /[?&]?([^=]+)=([^&]*)/g;
+                var tokens;
+                while (tokens = re.exec(query_string)) {
+                    if (decodeURIComponent(tokens[1]) === name) {
+                        return decodeURIComponent(tokens[2]);
+                    }
+                }
+                return null;
+            }
+
+            (function () {
+                function init() {
+                    var code = getQueryString('c');
+                    if (code) {
+                        code = decrypt(code);
+                        code = parseInt(code, 16).toString(10)
+                        if (!isNaN(code) && new Date().getTime() < code) {
+                            return true
+                        } else {
+                            return false
+                        }
+                    } else {
+                        return false
+                    }
+                }
+                if (!init()) destroyHtml()
+            })();
+
+            function destroyHtml() {
+                document.head.innerHTML = ''
+                document.body.innerHTML = '暂无权限访问'
+            }
+            const isArray = function (e) {
+                return Object.prototype.toString.call(e).toLocaleLowerCase().indexOf('array') > 0
+            }
+            const triggerType = {
+                blur: 'blur',
+                change: 'change',
+                all: ['blur', 'change']
+            }
+
+
+
+
+            Vue.component('c-crateshot', {
+                template: `
+  <el-drawer class="comment-drawer" title="我是标题" :visible.sync="drawer" :with-header="false" size="600px">
+      <div style="text-align:center;"
+        v-loading="loading"
+        element-loading-text="拼命加载中..."
+        element-loading-spinner="el-icon-loading"
+        element-loading-background="rgba(0, 0, 0, 0.8)"
+        >
+        <template v-show="!loading">
+            <img class="screen-shot-img" crossorigin="anonymous" :src="createdShot" :style="{height: imgHeight}" />
+            <el-button style="width:200px;margin-top:10px" type="primary" @click="downLoad">保存</el-button>
+        </template>
+      </div>
+      <section class="phone" id="poster-target">
+          <main class="img-con" :style="{'background-image': 'url('+shotData.files[0]+')'}">
+          </main>
+          <main class="comment-popup">
+              <header class="comment-header">
+
+                  <i class="comment-popup__close el-icon-close"></i>
+
+                  <div class="location">
+                      <div class="location-icon">
+                          <img class="location-img" src="./img/location.svg" alt="">
+                      </div>
+                      <div class="address-info">
+                          <div class="address-text">
+                              {{shotData.areaCH}}
+                          </div>
+                          <div class="number-of-seen">
+                          {{shotData.numberOfSeen}}{{shotData.numberOfSeenUnit}}人看过
+                          </div>
+                      </div>
+                  </div>
+                  <div class="comment-num">
+                      {{shotData.commentNum}}条评论
+                  </div>
+
+              </header>
+
+              <content class="comment-group">
+                  <div class="comment-group-con">
+                      <div class="comment-item" v-for="(item, key) in shotData.commentList" :key="key">
+                          <img :src="item.files[0]" class="head-img" draggable="false" />
+                          <div class="comment-item-rig">
+                              <div class="nickname">
+                                  <span class="name">{{item.name|overflowhidden(6)}}</span>
+                                  <template v-if="item.isAuthor">
+                                    <span class="author">作者</span>
+                                  </template>
+                              </div>
+                              <div class="comment-content">
+                              {{item.content}}
+                              </div>
+                              <div class="comment-function">
+                                  <div class="comment-f-lef">
+                                      <span class="time-loc">{{item.time}}·{{item.areaCH}}</span>
+                                      <span class="reply">回复</span>
+                                  </div>
+                                  <div class="comment-f-rig">
+                                      <span class="f-rig-item">
+                                          <img v-if="item.isLikes" class="f-rig-icon" src="./img/dings.svg" />
+                                          <img v-else class="f-rig-icon" src="./img/ding.svg" />
+                                          <span class="f-rig-t">{{(Number(item.likesNum)||'')|transformUnit}}</span>
+                                      </span>
+                                      <span class="f-rig-item">
+                                          <img class="f-rig-icon" src="./img/cai.svg" />
+                                          <span class="f-rig-t">{{(Number(item.noLikesNum)||'')|transformUnit}}</span>
+                                      </span>
+                                  </div>
+                              </div>
+
+                              <div class="comment-item-child">
+                                <div class="comment-item" v-for="(iitem, key) in item.child" :key="key">
+                                    <img :src="iitem.files[0]" class="head-img" draggable="false" />
+                                    <div class="comment-item-rig">
+                                        <div class="nickname">
+                                            <span class="name">{{iitem.name|overflowhidden(6)}}</span>
+                                            <template v-if="iitem.isAuthor">
+                                              <span class="author">作者</span>
+                                            </template>
+                                            <template v-if="iitem.replyNickname && !iitem.isAuthor">
+                                              <i class="el-icon-caret-right"></i>
+                                              <span class="name">{{iitem.replyNickname|overflowhidden(6)}}</span>
+                                            </template>
+                                        </div>
+                                        <div class="comment-content">
+                                          {{iitem.content}}
+                                        </div>
+                                        <div class="comment-function">
+                                            <div class="comment-f-lef">
+                                                <span class="time-loc">{{iitem.time}}·{{iitem.areaCH}}</span>
+                                                <span class="reply">回复</span>
+                                            </div>
+                                            <div class="comment-f-rig">
+                                                <span class="f-rig-item">
+                                                
+                                                <img v-if="iitem.isLikes" class="f-rig-icon" src="./img/dings.svg" />
+                                                <img v-else class="f-rig-icon" src="./img/ding.svg" />
+                                                    <span class="f-rig-t">{{(Number(iitem.likesNum)||'')|transformUnit}}</span>
+                                                </span>
+                                                <span class="f-rig-item">
+                                                    <img class="f-rig-icon" src="./img/cai.svg" />
+                                                    <span class="f-rig-t">{{(Number(iitem.noLikesNum)||'')|transformUnit}}</span>
+                                                </span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                              </div>
+
+                          </div>
+                      </div>
+                  </div>
+              </content>
+
+              <footer class="comment-input-con">
+                  <div class="comment-input">
+                      <input class="text-input" type="text" placeholder="善于结善缘，恶言伤人心" />
+                      <div class="icon-group">
+                          <img class="comment-input-icon" src="./img/at.svg" draggable="false" />
+                          <img class="comment-input-icon" src="./img/smile.svg" draggable="false" />
+                          <img class="comment-input-icon" src="./img/add.svg" draggable="false" />
+                      </div>
+                  </div>
+              </footer>
+          </main>
+      </section>
+  </el-drawer>
+    `,
+                data() {
+                    return {
+                        drawer: false,
+                        createdShot: '',
+                        imgHeight: '',
+                        loading: false,
+                        shotData: {
+                            files: [],
+                            areaCH: '',
+                            numberOfSeen: '',
+                            numberOfSeenUnit: '',
+                            commentNum: '', // 评论数
+                            releaseTime: '', // 发布时间
+                            commentList: [{
+                                files: [],
+                                areaCH: '',
+                                name: '',
+                                time: '',
+                                content: '',
+                                LikesNum: '',
+                                isAuthor: false,
+                                isLikes: false,
+                                child: [{
+                                    files: [],
+                                    areaCH: '',
+                                    name: '',
+                                    time: '',
+                                    content: '',
+                                    LikesNum: '',
+                                    isAuthor: false,
+                                    isLikes: false
+                                }]
+                            }],
+                        }
+                    }
+                },
+                created() {},
+                mounted() {
+                    this.$nextTick(() => {
+                        this.imgHeight = (window.innerHeight - 100) + 'px'
+                    })
+                },
+                filters: {
+                    transformUnit(number) {
+                        if (!number && number != 0) return number;
+                        let str_num;
+                        if (number >= 1E4 && number < 1E8) {
+                            str_num = Math.floor(number / 1E4 * 100) / 100
+                            return str_num + '万'
+                        }
+                        if (number >= 1E8 && number < 1E10) {
+                            str_num = Math.floor(number / 1E8 * 100) / 100
+                            return str_num + '亿'
+                        } else if (number >= 1E10 && number < 1E11) {
+                            str_num = Math.floor(number / 1E10 * 100) / 100
+                            return str_num + '百亿'
+                        } else if (number >= 1E11 && number < 1E12) {
+                            str_num = Math.floor(number / 1E11 * 100) / 100
+                            return str_num + '千亿'
+                        } else if (number >= 1E12) {
+                            str_num = Math.floor(number / 1E12 * 100) / 100
+                            return str_num + '万亿'
+                        } else { //一千以下
+                            return number
+                        }
+                    },
+                    overflowhidden(text, len) {
+                        text = String(text)
+                        if (text.length > len) {
+                            return text.slice(0, len) + '…'
+                        } else {
+                            return text;
+                        }
+                    }
+                },
+                methods: {
+                    downLoad() {
+                        let Url = this.createdShot;
+                        var blob = new Blob([''], {
+                            type: 'application/octet-stream'
+                        });
+                        var url = URL.createObjectURL(blob);
+                        var a = document.createElement('a');
+                        a.href = Url;
+                        a.download = '截图' || Url.replace(/(.*\/)*([^.]+.*)/ig, "$2").split("?")[0];
+                        var e = document.createEvent('MouseEvents');
+                        e.initMouseEvent('click', true, false, window, 0, 0, 0, 0, 0, false, false, false,
+                            false, 0,
+                            null);
+                        a.dispatchEvent(e);
+                        URL.revokeObjectURL(url);
+                    },
+                    generateShot(data) {
+                        this.loading = true;
+                        this.shotData = data;
+                        this.drawer = true;
+                        // const loading = this.$loading({
+                        //     lock: true,
+                        //     target: document.getElementsByClassName('comment-drawer')[0],
+                        //     text: '生成中...',
+                        //     spinner: 'el-icon-loading',
+                        //     background: 'rgba(0, 0, 0, 0.7)',
+                        //     customClass: 'custom-loading'
+                        // });
+                        setTimeout(() => {
+                            var posterTargetWidth = document.getElementById('poster-target').offsetWidth;
+                            var posterTargetHeight = document.getElementById('poster-target').offsetHeight;
+                            var canvas = document.createElement("canvas")
+                            canvas.setAttribute('id', 'thecanvas');
+                            canvas.width = posterTargetWidth * 3;
+                            canvas.height = posterTargetHeight * 3;
+                            canvas.style.width = posterTargetWidth + "px";
+                            canvas.style.height = posterTargetHeight + "px";
+                            var context = canvas.getContext("2d");
+                            var html2canvasParam = {
+                                width: posterTargetWidth,
+                                height: posterTargetHeight,
+                                scale: 3,
+                                canvas: canvas
+                            }
+                            html2canvas(document.getElementById('poster-target'), html2canvasParam)
+                                .then((
+                                    canvas) => {
+                                    this.createdShot = canvas.toDataURL('image/png', 1);
+                                    canvas = null;
+                                    this.loading = false;
+                                }).finally(() => {
+                                    loading.close();
+                                });
+                        }, 200)
+                    }
+                }
+            })
+            Vue.component('c-upload', {
+                template: ` 
+    <el-upload :class="{'upload-disabled': uploadList.length === 1}" ref="upload" v-bind="$attrs" v-on="$listeners" :multiple="false" v-model="uploadList" :http-request="httpRequest"
+        :limit="1" :before-remove="handleRemove">
+        <template v-if="listType === 'picture'">
+            <el-button size="small" type="primary" v-if="uploadList.length === 0">点击上传</el-button>
+        </template>
+        <template v-else>
+            <i class="el-icon-plus"></i>
+        </template>
+        <div slot="tip" class="el-upload__tip">只能上传jpg/png文件</div>
+    </el-upload>
+`,
+                model: {
+                    prop: 'value',
+                    event: 'change'
+                },
+                props: {
+                    ...this.$attrs
+                },
+                watch: {
+                    // 设置默认数据
+                    value: {
+                        // 首次加载的时候执行函数
+                        immediate: true,
+                        handler(val) {
+                            this.uploadList = this.value || []
+                        }
+                    }
+                },
+                data() {
+                    return {
+                        uploadList: [],
+                        listType: ''
+                    }
+                },
+                mounted() {
+                    this.$nextTick(function () {
+                        this.listType = this.$refs.upload._props.listType;
+                    })
+                },
+                methods: {
+                    getBase64(file) {
+                        return new Promise((resolve, reject) => {
+                            let reader = new FileReader();
+                            let imgResult = "";
+                            reader.readAsDataURL(file);
+                            reader.onload = function () {
+                                imgResult = reader.result;
+                            };
+                            reader.onerror = function (error) {
+                                reject(error);
+                            };
+                            reader.onloadend = function () {
+                                resolve(imgResult);
+                            };
+                        });
+                    },
+                    async httpRequest(e) {
+                        this.uploadList.push(await this.getBase64(e.file))
+                        this.$emit('change', this.uploadList)
+                    },
+                    handleRemove(file, fileList) {
+                        this.uploadList = []
+                        this.$refs.upload.clearFiles();
+                        this.$emit('change', [])
+                    }
+                }
+            })
+            new Vue({
+                el: '#app',
+                data() {
+                    return {
+                        colBindAttribute: {
+                            sl: 8,
+                            lg: 8,
+                            md: 24
+                        },
+                        col2BindAttribute: {
+                            sl: 16,
+                            lg: 16,
+                            md: 18,
+                            sm: 22,
+                            xs: 22
+                        },
+                        fileAccept: '.jpg,.png,jpeg', // 文件上传格式
+                        formData: {
+                            files: [],
+                            areaCH: '',
+                            numberOfSeen: '',
+                            numberOfSeenUnit: '', // 看过人次的单位
+                            commentNum: '', // 评论数
+                            releaseTime: '', // 发布时间
+                            commentList: [{
+                                files: [],
+                                areaCH: '',
+                                name: '',
+                                time: '',
+                                content: '',
+                                likesNum: '0',
+                                noLikesNum: '0',
+                                isAuthor: false,
+                                isLikes: false,
+                                child: []
+                            }],
+                        },
+                    }
+                },
+                mounted() {
+                    this.$nextTick(() => {
+                        var code = getQueryString('c');
+                        code = decrypt(code);
+                        code = parseInt(code, 16).toString(10)
+                        setInterval(() => {
+                            if (code) {
+                                if (!(!isNaN(code) && new Date().getTime() < code)) {
+                                    destroyHtml()
+                                }
+                            }
+                        }, 1000)
+
+                        document.getElementById('app') && document.getElementById('app').setAttribute(
+                            'class', '')
+                    })
+                },
+                computed: {
+                    requiredRule() {
+                        return function (label) {
+                            return [{
+                                required: true,
+                                message: label,
+                                trigger: triggerType.all
+                            }]
+                        }
+                    }
+                },
+                methods: {
+                    uploadClearVali(e) {
+                        const domRef = this.$refs[e];
+                        if (isArray(domRef)) {
+                            this.$refs[e][0].clearValidate()
+                        } else {
+                            this.$refs[e].clearValidate()
+                        }
+                    },
+                    delComment(params = {
+                        key: undefined,
+                        kkey: undefined,
+                    }) {
+                        if (isNaN(params.key)) return;
+                        console.log(isNaN(params.kkey), params.kkey)
+                        if (isNaN(params.kkey)) {
+                            this.formData.commentList.splice(params.key, 1)
+                        } else {
+                            this.formData.commentList[params.key].child.splice(params.kkey, 1)
+                        }
+                    },
+                    createComment(params = {
+                        key: undefined
+                    }) {
+                        let item = {
+                            files: [],
+                            areaCH: '',
+                            name: '',
+                            time: '',
+                            content: '',
+                            likesNum: '0',
+                            noLikesNum: '0',
+                            isAuthor: false,
+                            isLikes: false
+                        }
+                        if (!isNaN(params.key)) {
+                            item['replyNickname'] = ''
+                            this.formData.commentList[params.key].child.push(item)
+                        } else {
+                            item['child'] = []
+                            this.formData.commentList.push(item)
+                        }
+                    },
+                    onSubmit() {
+                        this.$refs['form'].validate((valid) => {
+                            if (valid) {
+                                this.$refs['c-crateshot'].generateShot(this.formData)
+                            }
+                        });
+                    }
+                }
+            })
+        })()
+    </script>
+</body>
+
+</html>

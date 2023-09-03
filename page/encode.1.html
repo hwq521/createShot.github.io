@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>Document</title>
+</head>
+
+<body>
+    <div>
+        <input type="text" id="textinput" value="2023-08-23 22:11:04" placeholder="请输入时间">
+        <button id="submit">提交</button>
+    </div>
+    <br>
+    <textarea id="textarea" placeholder="加密输出内容" cols="30" rows="10"></textarea>
+    <script src="./js/AWE2342da.js"></script>
+    <script>
+        (function () {
+
+            function consoleTimeSecretKey() {
+                var inputVal = document.getElementById('textinput').value
+                if (!inputVal) {
+                    console.warn('输入框的值为空，请输入后再运行代码')
+                    return false;
+                }
+                return getTimeSecretKey(inputVal)
+            }
+            // 获取时间第二密钥
+            // 年+月+日+时+分+秒=密钥
+            function getTimeSecretKey(paramVal) {
+                var valDate = new Date(paramVal)
+                var year = valDate.getFullYear()
+                var month = valDate.getMonth() + 1
+                var day = valDate.getDate()
+                var hour = valDate.getHours()
+                var minute = valDate.getMinutes()
+                var second = valDate.getSeconds()
+                var singleNumber = [year, month, day, hour, minute, second].reduce(function (beforeNum, afterNum) {
+                    if (afterNum) {
+                        if (afterNum > 10) {
+                            afterNum = String(afterNum).split('').reduce(function (beforeSonNum,
+                                afterSonNum) {
+                                beforeSonNum = Number(beforeSonNum)
+                                afterSonNum = Number(afterSonNum)
+                                return afterSonNum ? beforeSonNum + afterSonNum : beforeSonNum
+                            }, 0)
+                        }
+                        return beforeNum + afterNum
+                    } else {
+                        return beforeNum
+                    }
+                }, 0)
+                var total = [year, month, day, hour, minute, second].reduce(function (beforeNum, afterNum) {
+                    return afterNum ? beforeNum + afterNum : beforeNum
+                })
+                console.log(total, singleNumber)
+                return total + singleNumber
+            }
+            return consoleTimeSecretKey()
+        })()
+
+
+
+
+        var keyStr = 'ajseqwesz121!5'
+        var ivStr = '4566ai0qO23412312'
+
+        function encrypt(data, keyS, ivS) {
+            let key = keyS || keyStr
+            let iv = ivS || ivStr
+            key = CryptoJS.enc.Utf8.parse(key)
+            iv = CryptoJS.enc.Utf8.parse(iv)
+            const src = CryptoJS.enc.Utf8.parse(data)
+            return CryptoJS.DES.encrypt(src, key, {
+                iv: iv, // 初始向量
+                mode: CryptoJS.mode.CBC, // 加密模式
+                padding: CryptoJS.pad.Pkcs7, // 填充方式
+            }).toString()
+        }
+        submit.onclick = function () {
+            var val = document.getElementById('textinput').value
+            if (val === '') {
+                alert('时间不可为空')
+                return
+            }
+            if (new Date(val).getTime() < 31507200000) {
+                alert('无效时间')
+            } else {
+                var times = new Date(val).getTime().toString(16);
+
+                document.getElementById('textarea').value = encrypt(times)
+            }
+        }
+    </script>
+</body>
+
+</html>
